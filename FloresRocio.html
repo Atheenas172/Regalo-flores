@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0f">
+<title>¡Feliz Cumpleaños, Laura!</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#0a0a0f;touch-action:none;-webkit-text-size-adjust:100%;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;height:100vh;height:100dvh;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);background:radial-gradient(ellipse at 50% 45%,#1d1230 0,#0a0a0f 68%);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:center}
+h1{font-size:clamp(20px,6.2vw,38px);font-weight:700;line-height:1.15;color:#ffe3f1;padding:0 4vw;text-shadow:0 0 10px #ff5fa2,0 0 26px #e0309c;animation:gl 3.2s ease-in-out infinite}
+h1.b{animation:pop .7s ease-out}
+#sub{font-size:clamp(14px,4.2vw,20px);letter-spacing:.05em;color:#ffe9b8;text-shadow:0 0 10px #f4b942;padding:0 6vw}
+pre,#pb{font-family:"SF Mono",ui-monospace,Menlo,Consolas,"Courier New",monospace;font-weight:700;white-space:pre;color:#fff;overflow:hidden}
+#pb{position:absolute;visibility:hidden;left:0;top:0}
+i{font-style:normal}
+@keyframes gl{50%{text-shadow:0 0 14px #ff7fb8,0 0 36px #e0309c}}
+@keyframes pop{30%{transform:scale(1.07);text-shadow:0 0 18px #fff,0 0 40px #ff5fa2}}
+</style>
+</head>
+<body>
+<h1 id="t">¡Feliz Cumpleaños, Rocío!</h1>
+<pre id="pr"></pre>
+<div id="sub">Te quiero un montón preciosa 💗</div>
+<span id="pb">MMMMMMMMMMMMMMMMMMMM</span>
+<script>
+(()=>{
+const COLS=60,ROWS=42,D=11,F=13*D,CX=COLS/2,CY=ROWS/2+.5,TAU=6.2832;
+const pre=document.getElementById('pr'),h1=document.getElementById('t'),sub=document.getElementById('sub'),pb=document.getElementById('pb');
+const RC='.,-~:;=!*#$@+oxO'; // rampa de luz (0-11) + extras para destellos/confeti
+
+/* ---- Paleta: cada material tiene 3 niveles de luz ---- */
+const C=[[255,95,162],[224,48,156],[255,122,99],[255,176,204],[255,225,77],[31,174,107],[155,224,74],[15,143,85],[255,243,224],[244,185,66],[185,166,255]];
+// 0 rosa,1 magenta,2 coral,3 rosa claro,4 centro dorado,5 tallo,6 hoja lima,7 hoja esmeralda,8 envoltorio crema,9 lazo dorado,10 destello
+let css='';C.forEach((c,m)=>[.62,.88,1.12].forEach((k,l)=>css+=`.k${m*3+l+1}{color:rgb(${c.map(v=>Math.min(255,v*k|0))})}`));
+document.head.appendChild(Object.assign(document.createElement('style'),{textContent:css}));
+
+/* ---- Geometría paramétrica ---- */
+const G=[];
+const rot=(v,rx,ry,rz)=>{let[x,y,z]=v,c,s,t;
+ c=Math.cos(rz);s=Math.sin(rz);t=x*c-y*s;y=x*s+y*c;x=t;
+ c=Math.cos(rx);s=Math.sin(rx);t=y*c-z*s;z=y*s+z*c;y=t;
+ c=Math.cos(ry);s=Math.sin(ry);t=x*c+z*s;z=-x*s+z*c;x=t;
+ return[x,y,z]};
+const id=v=>v;
+// Muestrea una superficie f(u,v) con u,v en [0,1]; normales por diferencias finitas
+function surf(f,nu,nv,m,tr,T){
+ const e=.004,A=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]];
+ for(let i=0;i<=nu;i++)for(let j=0;j<=nv;j++){
+  const u=i/nu,v=j/nv,du=A(f(Math.min(1,u+e),v),f(Math.max(0,u-e),v)),dv=A(f(u,Math.min(1,v+e)),f(u,Math.max(0,v-e)));
+  let n=[du[1]*dv[2]-du[2]*dv[1],du[2]*dv[0]-du[0]*dv[2],du[0]*dv[1]-du[1]*dv[0]];
+  const l=Math.hypot(n[0],n[1],n[2]);if(l<1e-12)continue;
+  n=tr([n[0]/l,n[1]/l,n[2]/l]);const p=tr(f(u,v));
+  G.push(p[0]+T[0],p[1]+T[1],p[2]+T[2],n[0],n[1],n[2],m);
+ }}
+// Pétalo/hoja: línea media curvada (ángulo a0→a1 respecto a la vertical), ancho en forma de lágrima y curvatura lateral
+const petal=(ph,L,Wd,a0,a1,cu)=>{const k=a1-a0,cp=Math.cos(ph),sp=Math.sin(ph);
+ return(u,v)=>{const a=a0+k*u,r=L*(Math.cos(a0)-Math.cos(a))/k+.03,y=L*(Math.sin(a)-Math.sin(a0))/k,
+  w=Wd*Math.pow(Math.sin(Math.PI*Math.pow(u,.75)),.65),vv=v*2-1,t=vv*w,q=cu*vv*vv*w,
+  rr=r-q*Math.cos(a),yy=y+q*Math.sin(a);
+  return[rr*cp-t*sp,yy,rr*sp+t*cp]}};
+const ST=.055;
+
+function flower(h,s,m1,m2,idx){
+ const be=.12+.32*Math.hypot(h[0],h[2]),ry=Math.atan2(-h[2],h[0]),tr=v=>rot(v,0,ry,-be);
+ // dos capas de pétalos volumétricos
+ [[7,.95,1.7,.6,.27,.3,m1],[7,.6,1.25,.46,.23,.35,m2]].forEach(([n,a0,a1,L,Wd,cu,m],li)=>{
+  for(let i=0;i<n;i++)surf(petal(i/n*TAU+li*.45+idx,L*s,Wd*s,a0,a1,cu),Math.ceil(L*s/ST),Math.ceil(2*Wd*s/ST),m,tr,h)});
+ // centro dorado (esfera deformada)
+ surf((u,v)=>{const a=u*Math.PI,b=v*TAU;return[.2*s*Math.sin(a)*Math.cos(b),.16*s+.17*s*Math.cos(a),.2*s*Math.sin(a)*Math.sin(b)]},10,18,4,tr,h);
+ // tallo: Bézier cuadrática desde el punto de agarre, terminando alineada con el eje de la flor
+ const d=rot([0,1,0],0,ry,-be),dist=Math.hypot(h[0],h[1]+.6,h[2]),
+  P1=[h[0]-d[0]*dist*.45,h[1]-d[1]*dist*.45,h[2]-d[2]*dist*.45],
+  B=t=>[0,1,2].map(i=>(1-t)*(1-t)*(i==1?-.6:0)+2*(1-t)*t*P1[i]+t*t*h[i]);
+ for(let i=0;i<=150;i++){const c=B(i/150);
+  for(let k=0;k<3;k++){const a=Math.random()*TAU,b=Math.random()*2-1,q=Math.sqrt(1-b*b),n=[q*Math.cos(a),b,q*Math.sin(a)];
+   G.push(c[0]+n[0]*.05,c[1]+n[1]*.05,c[2]+n[2]*.05,n[0],n[1],n[2],5)}}
+ // hoja lateral sobre el tallo
+ const c=B(.5);
+ surf(petal(Math.atan2(c[2],c[0])+(idx%2?.7:-.7),.6,.13,.6,1.45,.3),11,5,6+idx%2,id,c);
+}
+// 6 flores: [x,y,z,escala,color pétalo exterior,color pétalo interior]
+[[.05,2.05,.05,1.05,0,1],[-1.2,1.45,.35,.95,2,0],[1.25,1.4,-.1,.95,1,3],[-.35,.95,1.15,.9,3,0],[.75,1,.95,.88,0,2],[-.8,.9,-.95,.88,2,1]]
+ .forEach((f,i)=>flower(f.slice(0,3),f[3],f[4],f[5],i));
+// hojas grandes que asoman por el borde del envoltorio
+[.2,1.3,2.4,3.5,4.6,5.5].forEach((p,i)=>surf(petal(p,1.25+.15*(i%3),.2,.45,1.5,.45),24,8,6+i%2,id,[Math.cos(p)*.35,-.2,Math.sin(p)*.35]));
+// envoltorio cónico plisado
+const Wr=(u,p)=>1.35*Math.pow(u,.9)*(1+.07*u*Math.sin(7*p));
+surf((u,v)=>{const p=v*TAU,r=Wr(u,p);return[r*Math.cos(p),-2.5+2.6*u+.08*u*u*u*u*Math.sin(5*p),r*Math.sin(p)]},50,190,8,id,[0,0,0]);
+// cinta dorada + lazo
+surf((u,v)=>{const p=u*TAU,y=-1.17+.26*v,r=Wr((y+2.5)/2.6,p)+.05;return[r*Math.cos(p),y,r*Math.sin(p)]},120,5,9,id,[0,0,0]);
+[-1,1].forEach(g=>surf((u,v)=>{const a=u*TAU,b=v*TAU,q=.2+.045*Math.cos(b);return[g*.27+q*Math.cos(a)*1.25,q*Math.sin(a)*.9,.045*Math.sin(b)]},30,8,9,v=>rot(v,0,g*.5,g*.4),[0,-1.05,.86]));
+surf((u,v)=>{const a=u*Math.PI,b=v*TAU;return[.1*Math.sin(a)*Math.cos(b),.1*Math.cos(a),.1*Math.sin(a)*Math.sin(b)]},8,12,9,id,[0,-1.05,.88]);
+
+const N=G.length/7,PX=new Float32Array(N),PY=new Float32Array(N),PZ=new Float32Array(N),NX=new Float32Array(N),NY=new Float32Array(N),NZ=new Float32Array(N),PM=new Uint8Array(N);
+for(let i=0;i<N;i++){const o=i*7;PX[i]=G[o];PY[i]=G[o+1];PZ[i]=G[o+2];NX[i]=G[o+3];NY[i]=G[o+4];NZ[i]=G[o+5];PM[i]=G[o+6]}
+G.length=0;
+
+/* ---- Motor: z-buffer + iluminación direccional ---- */
+const zb=new Float32Array(COLS*ROWS),cls=new Uint8Array(COLS*ROWS),chi=new Uint8Array(COLS*ROWS);
+const LX=-.45,LY=.6,LZ=.66;
+let ang=0,vel=.75,tilt=.25,boost=0,drag=0,last=0;
+const Sp=Array.from({length:26},()=>({x:Math.random()*COLS,y:Math.random()*ROWS,v:2+Math.random()*5,p:Math.random()*TAU}));
+const Q=[];
+
+function burst(c,r){
+ for(let i=0;i<42;i++){const a=Math.random()*TAU,s=6+Math.random()*22;
+  Q.push({x:c,y:r,vx:Math.cos(a)*s*2,vy:Math.sin(a)*s-10,l:.9+Math.random()*.9,h:8+(Math.random()*8|0),m:[0,1,2,3,4,9,6][i%7]})}
+ boost=1;h1.classList.remove('b');void h1.offsetWidth;h1.classList.add('b');
+}
+
+function render(){
+ let s='',cur=0;
+ for(let r=0,j=0;r<ROWS;r++){
+  for(let c=0;c<COLS;c++,j++){
+   const k=cls[j];
+   if(k!==cur){if(cur)s+='</i>';if(k)s+='<i class=k'+k+'>';cur=k}
+   s+=k?RC[chi[j]]:' ';
+  }
+  if(cur){s+='</i>';cur=0}
+  s+='\n';
+ }
+ pre.innerHTML=s;
+}
+
+function loop(now){
+ const dt=Math.min(.05,(now-last)/1e3)||.016;last=now;
+ if(!drag){vel+=((vel<0?-.75:.75)-vel)*Math.min(1,dt*1.3);tilt+=(.25-tilt)*Math.min(1,dt*.8);ang+=vel*dt}
+ boost*=.95;
+ const bo=.3*boost,ca=Math.cos(ang),sa=Math.sin(ang),ct=Math.cos(tilt),st=Math.sin(tilt);
+ zb.fill(0);cls.fill(0);
+ for(let i=0;i<N;i++){
+  const x=PX[i],y=PY[i],z=PZ[i],x1=x*ca+z*sa,z1=-x*sa+z*ca,y2=y*ct-z1*st,z2=y*st+z1*ct,
+   d=D-z2,k=F/d,c=(CX+x1*k)|0,r=(CY-y2*k*.5)|0;           // proyección perspectiva (fila = 2x alto que ancho)
+  if(c<0||c>=COLS||r<0||r>=ROWS)continue;
+  const j=r*COLS+c,w=1/d;
+  if(w<=zb[j])continue;                                      // z-buffer
+  zb[j]=w;
+  const nx=NX[i],ny=NY[i],nz=NZ[i],a=nx*ca+nz*sa,b=-nx*sa+nz*ca,e=ny*ct-b*st,f=ny*st+b*ct;
+  let l=a*LX+e*LY+f*LZ;if(f<0)l=-l;                          // superficie de doble cara
+  if(l<0)l=0;
+  const I=.1+.95*l+bo+z2*.06,q=I<=0?0:Math.min(11,(I*12)|0);
+  chi[j]=q;cls[j]=PM[i]*3+(q<4?1:q<8?2:3);
+ }
+ // destellos de fondo
+ for(const s of Sp){
+  s.y-=s.v*dt;if(s.y<0){s.y=ROWS-1;s.x=Math.random()*COLS}
+  const t=(Math.sin(s.p+now*.004*s.v/3)+1)/2;
+  if(t<.25)continue;
+  const j=(s.y|0)*COLS+(s.x|0);
+  if(!cls[j]){chi[j]=t>.8?12:t>.55?8:0;cls[j]=30+(t>.8?3:t>.55?2:1)}
+ }
+ // confeti
+ for(let i=Q.length;i--;){
+  const p=Q[i];p.vy+=40*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;
+  if((p.l-=dt)<=0||p.y>=ROWS){Q.splice(i,1);continue}
+  if(p.y>=0&&p.x>=0&&p.x<COLS){const j=(p.y|0)*COLS+(p.x|0);cls[j]=p.m*3+3;chi[j]=p.h}
+ }
+ render();
+ requestAnimationFrame(loop);
+}
+
+/* ---- Ajuste responsive ---- */
+function fit(){
+ const W=Math.min(innerWidth*.86,(innerHeight-h1.offsetHeight-sub.offsetHeight-40)*COLS/(2*ROWS),560);
+ let fs=W/(COLS*.6);
+ pb.style.fontSize=fs+'px';
+ const cw=pb.getBoundingClientRect().width/20;
+ const k=W/(COLS*cw);fs*=k;
+ pre.style.fontSize=fs+'px';
+ pre.style.lineHeight=(2*cw*k)+'px';   // celda 2:1 => proyección sin estiramiento
+}
+addEventListener('resize',fit);addEventListener('orientationchange',()=>setTimeout(fit,150));
+
+/* ---- Interacción: arrastrar para girar, tocar para destellos ---- */
+let lx=0,ly=0,sx=0,sy=0,t0=0,lm=0;
+addEventListener('pointerdown',e=>{drag=1;lx=sx=e.clientX;ly=sy=e.clientY;t0=lm=performance.now();vel=0});
+addEventListener('pointermove',e=>{
+ if(!drag)return;
+ const n=performance.now(),dx=e.clientX-lx,dy=e.clientY-ly;
+ lx=e.clientX;ly=e.clientY;ang+=dx*.012;tilt=Math.min(.6,Math.max(.02,tilt+dy*.004));
+ vel=Math.max(-14,Math.min(14,vel*.5+dx*.012/Math.max((n-lm)/1e3,.008)*.5));lm=n;
+});
+const up=tap=>e=>{
+ if(!drag)return;drag=0;const n=performance.now();
+ if(n-lm>90)vel=0;
+ if(tap&&Math.hypot(e.clientX-sx,e.clientY-sy)<10&&n-t0<500){
+  const R=pre.getBoundingClientRect();
+  burst(Math.max(0,Math.min(COLS-1,(e.clientX-R.left)/R.width*COLS)),Math.max(0,Math.min(ROWS-1,(e.clientY-R.top)/R.height*ROWS)));
+ }
+};
+addEventListener('pointerup',up(1));addEventListener('pointercancel',up(0));
+addEventListener('contextmenu',e=>e.preventDefault());
+
+fit();requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
